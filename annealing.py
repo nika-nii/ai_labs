@@ -37,23 +37,17 @@ def compute_energy(solution):
 def emit_solution(solution):
     n = len(solution)
     board = [
-        ['#'] * n for _ in range(n)
+        [' '] * n for _ in range(n)
     ]
     for x, y in enumerate(solution):
-        board[y][x] = "Q"
+        board[y][x] = "♛"
     str_board = "\n".join(
         "".join(row) for row in board
     )
-    print(str_board)
+    return str_board
 
 
-if __name__ == "__main__":
-    temp_start = 30
-    temp_stop = 0.5
-    alpha = 0.98
-    steps = 1000
-    n = 9
-
+def run(temp_start, temp_stop, alpha, steps, n):
     g_bad_decisions = []
     bad_decisions = 0
     g_step = []
@@ -66,8 +60,18 @@ if __name__ == "__main__":
 
     best_solution = np.copy(current_solution)
     best_energy = current_energy
-
-    for step in range(steps):
+    last_temperature = current_temperature
+    steps_in_curr_temp = 0
+    step = 0
+    while True:
+        step += 1
+        if last_temperature == current_temperature:
+            steps_in_curr_temp += 1
+            if steps_in_curr_temp > steps:
+                break
+        else:
+            last_temperature = current_temperature
+            steps_in_curr_temp = 0
         if current_temperature <= temp_stop:
             break
         working_solution = tweak_solution(current_solution)
@@ -90,8 +94,21 @@ if __name__ == "__main__":
         g_temp.append(current_temperature)
         g_energy.append(current_energy)
         g_bad_decisions.append(bad_decisions)
+    return {'solution': emit_solution(best_solution), 'final_energy': current_energy, 'plot_data': (g_step, g_temp, g_energy, g_bad_decisions)}
 
-    emit_solution(best_solution)
+
+if __name__ == "__main__":
+    temp_start = 30
+    temp_stop = 0.5
+    alpha = 0.98
+    steps = 1000
+    n = 9
+    result = run(temp_start, temp_stop, alpha, steps, n)
+    if result['final_energy'] != 0:
+        print("Не удалось найти решение")
+        exit()
+    print(result['solution'])
+    g_step, g_temp, g_energy, g_bad_decisions = result['plot_data']
     import matplotlib.pyplot as plt
     plt.title("График")
     plt.grid()
